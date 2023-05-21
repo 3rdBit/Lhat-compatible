@@ -59,29 +59,31 @@ def unpack(json_message: str):
     <一个列表>: 这是用户名单，有用的
     """
     by_color = 'blue'
-    try:
-        message = json.loads(json_message)  # JSON加载
-    except json.decoder.JSONDecodeError:  # 如果加载失败，两种可能，第一种，长消息，第二种，断了。
-        return 'NOT_JSON_MESSAGE', json_message
-
-    if message['type'] == 'TEXT_MESSAGE':  # 如果是纯文本消息
-        message_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(message['time']))  # 将时间戳转成日期时间
-        if message['by'] == 'Server':
-            by_color = 'red'
-        return message['type'], message['to'], \
-            f"<font color='{by_color}'>{message['by']}</font> <font color='grey'>[{message_time}]</font> : " \
-            f"<br/>&nbsp;&nbsp;{message['message']}", \
-            message['by']
-    elif message['type'] == 'USER_MANIFEST':  # 如果是用户列表
+    received_data_list = re.findall(r'\{.*?}', json_message)
+    for json_message in received_data_list:  # finded_data指正则匹配后的列表遍历
         try:
-            manifest = json.loads(message['message'])  # 将用户列表转成列表
-            return message['type'], manifest
-        except json.decoder.JSONDecodeError:  # 如果转换失败，则返回错误
-            return 'MANIFEST_NOT_JSON'  # 用户名单不是JSON格式
-    elif message['type'] == 'DEFAULT_ROOM':
-        return message['type'], message['message']
-    else:
-        return 'UNKNOWN_MESSAGE_TYPE'
+            message = json.loads(json_message)  # JSON加载
+        except json.decoder.JSONDecodeError:  # 如果加载失败，两种可能，第一种，长消息，第二种，断了。
+            return 'NOT_JSON_MESSAGE', json_message
+
+        if message['type'] == 'TEXT_MESSAGE':  # 如果是纯文本消息
+            message_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(message['time']))  # 将时间戳转成日期时间
+            if message['by'] == 'Server':
+                by_color = 'red'
+            return message['type'], message['to'], \
+                f"<font color='{by_color}'>{message['by']}</font> <font color='grey'>[{message_time}]</font> : " \
+                f"<br/>&nbsp;&nbsp;{message['message']}", \
+                message['by']
+        elif message['type'] == 'USER_MANIFEST':  # 如果是用户列表
+            try:
+                manifest = json.loads(message['message'])  # 将用户列表转成列表
+                return message['type'], manifest
+            except json.decoder.JSONDecodeError:  # 如果转换失败，则返回错误
+                return 'MANIFEST_NOT_JSON'  # 用户名单不是JSON格式
+        elif message['type'] == 'DEFAULT_ROOM':
+            return message['type'], message['message']
+        else:
+            return 'UNKNOWN_MESSAGE_TYPE'
 
 
 def send(connection, raw_message: str, send_from, output_box):
